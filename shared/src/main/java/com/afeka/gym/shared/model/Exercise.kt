@@ -9,10 +9,10 @@ import org.json.JSONObject
  */
 data class Exercise(
     val id: String,
-    var name: String,
-    var targetSets: Int,
-    var targetReps: Int,
-    var completedSets: Int = 0
+    val name: String,
+    val targetSets: Int,
+    val targetReps: Int,
+    val completedSets: Int = 0
 ) {
     /** True once the trainee has logged every target set. */
     val isComplete: Boolean

@@ -1,34 +1,36 @@
 package com.afeka.gym.shared.ui
 
 import android.os.Bundle
-import android.view.View
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.graphics.Color
 import com.afeka.gym.shared.data.WorkoutRepository
-import com.afeka.gym.shared.databinding.ActivityBaseWorkoutBinding
 import com.afeka.gym.shared.model.Exercise
 
 /**
- * Abstract screen shared by both applications. It owns everything common to
- * the trainer and trainee screens: loading the plan from [WorkoutRepository],
- * wiring the RecyclerView, the summary line, the action button and saving.
+ * Abstract Compose screen shared by both applications. It owns everything
+ * common to the trainer and trainee: the observable plan state, loading and
+ * saving via [WorkoutRepository], the theme and the shared [WorkoutScreen].
  *
- * Each app provides a concrete subclass that fills in the four abstract hooks
+ * Each app provides a concrete subclass that fills in the abstract hooks
  * below. This is the "abstract Activity that the per-app Activities inherit
- * from" required by the assignment.
+ * from" required by the assignment — now expressed with Jetpack Compose.
  */
-abstract class BaseWorkoutActivity : AppCompatActivity() {
+abstract class BaseWorkoutActivity : ComponentActivity() {
 
     protected lateinit var repository: WorkoutRepository
-    protected val exercises = mutableListOf<Exercise>()
 
-    private lateinit var binding: ActivityBaseWorkoutBinding
-    private lateinit var adapter: ExerciseAdapter
+    /**
+     * The plan as observable Compose state. Replace items with `copy(...)`
+     * (e.g. `exercises[i] = exercises[i].copy(...)`) so recomposition fires.
+     */
+    protected val exercises = mutableStateListOf<Exercise>()
 
     // ---- Hooks each app MUST implement ------------------------------------
 
-    /** Title shown in the action bar. */
+    /** Title shown in the top app bar. */
     protected abstract fun screenTitle(): String
 
     /** Label of the bottom action button. */
@@ -37,58 +39,55 @@ abstract class BaseWorkoutActivity : AppCompatActivity() {
     /** What happens when the bottom action button is tapped. */
     protected abstract fun onActionClicked()
 
-    /** What happens when a row is tapped. */
-    protected abstract fun onExerciseClicked(exercise: Exercise, position: Int)
+    /** What happens when a card is tapped. */
+    protected abstract fun onExerciseClicked(exercise: Exercise, index: Int)
 
     /** Secondary line shown under each exercise name. */
     protected abstract fun describeExercise(exercise: Exercise): String
 
-    /** Optional hint shown when the plan is empty. */
+    // ---- Hooks an app MAY override ----------------------------------------
+
+    /** Hint shown when the plan is empty. */
     protected open fun emptyHint(): String = "No exercises yet."
+
+    /** App accent colour (blue trainer / green trainee). */
+    protected open fun accentColor(): Color = Color(0xFF1565C0)
+
+    /**
+     * Extra UI layered on top of the screen — used by the trainer app to show
+     * its add/edit dialog. Default: nothing.
+     */
+    @Composable
+    protected open fun OverlayContent() {
+    }
 
     // ---- Common behaviour -------------------------------------------------
 
     final override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityBaseWorkoutBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        title = screenTitle()
         repository = WorkoutRepository(this)
         exercises.addAll(repository.load())
 
-        adapter = ExerciseAdapter(
-            items = exercises,
-            describe = ::describeExercise,
-            onClick = ::onExerciseClicked
-        )
-        binding.recycler.layoutManager = LinearLayoutManager(this)
-        binding.recycler.adapter = adapter
-        binding.recycler.addItemDecoration(
-            DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
-        )
-
-        binding.actionButton.text = actionLabel()
-        binding.actionButton.setOnClickListener { onActionClicked() }
-
-        refresh()
+        setContent {
+            WorkoutTheme(accent = accentColor()) {
+                val done = exercises.count { it.isComplete }
+                WorkoutScreen(
+                    title = screenTitle(),
+                    summary = "${exercises.size} exercises · $done completed",
+                    exercises = exercises,
+                    describe = ::describeExercise,
+                    actionLabel = actionLabel(),
+                    emptyHint = emptyHint(),
+                    onAction = ::onActionClicked,
+                    onExerciseClick = ::onExerciseClicked
+                )
+                OverlayContent()
+            }
+        }
     }
 
-    /** Saves the current plan and redraws the list and summary. */
+    /** Persists the current plan. The UI updates automatically from state. */
     protected fun persist() {
         repository.save(exercises)
-        refresh()
-    }
-
-    /** Redraws the list, summary and empty-state without saving. */
-    protected fun refresh() {
-        adapter.notifyDataSetChanged()
-        val done = exercises.count { it.isComplete }
-        binding.summary.text =
-            "${exercises.size} exercises · $done completed"
-        val empty = exercises.isEmpty()
-        binding.emptyHint.visibility = if (empty) View.VISIBLE else View.GONE
-        binding.emptyHint.text = emptyHint()
-        binding.recycler.visibility = if (empty) View.GONE else View.VISIBLE
     }
 }

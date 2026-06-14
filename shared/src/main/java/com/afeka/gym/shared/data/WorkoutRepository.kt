@@ -36,10 +36,12 @@ class WorkoutRepository(context: Context) {
     }
 
     private fun defaultPlan(): MutableList<Exercise> = mutableListOf(
-        Exercise("ex-1", "Squats", targetSets = 4, targetReps = 10),
-        Exercise("ex-2", "Bench Press", targetSets = 3, targetReps = 8),
-        Exercise("ex-3", "Deadlift", targetSets = 3, targetReps = 5),
-        Exercise("ex-4", "Pull-ups", targetSets = 3, targetReps = 12)
+        // Seed ids use a distinct prefix so they never collide with the ids
+        // produced by nextId() ("ex-1", "ex-2", ...) for user-added exercises.
+        Exercise("seed-1", "Squats", targetSets = 4, targetReps = 10),
+        Exercise("seed-2", "Bench Press", targetSets = 3, targetReps = 8),
+        Exercise("seed-3", "Deadlift", targetSets = 3, targetReps = 5),
+        Exercise("seed-4", "Pull-ups", targetSets = 3, targetReps = 12)
     )
 
     private companion object {

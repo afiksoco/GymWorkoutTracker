@@ -1,36 +1,66 @@
 # Gym Workout Tracker — Exercise 1 (Android)
 
-Two Android applications that share one common Android library module.
-The shared module contains an **abstract Activity** (`BaseWorkoutActivity`),
-and each app has a concrete Activity that **inherits** from it — exactly the
-structure required by the assignment.
+Two Android applications that share one common Android library module, built
+with **Jetpack Compose + Material 3**. The shared module contains an
+**abstract Activity** (`BaseWorkoutActivity`), and each app has a concrete
+Activity that **inherits** from it — exactly the structure required by the
+assignment.
 
 ## Modules
 
 | Module     | Type                | Role |
 |------------|---------------------|------|
-| `:shared`  | `com.android.library` | Abstract `BaseWorkoutActivity`, the `Exercise` model, the `WorkoutRepository` (SharedPreferences persistence) and the shared `ExerciseAdapter` + layouts. |
+| `:shared`  | `com.android.library` | Abstract `BaseWorkoutActivity`, the shared `WorkoutScreen` composable + `WorkoutTheme`, the `Exercise` model and the `WorkoutRepository` (SharedPreferences persistence). |
 | `:trainer` | `com.android.application` | **Gym Trainer** app. `TrainerActivity : BaseWorkoutActivity`. Build the plan: add / edit / delete exercises and their target sets × reps. |
-| `:trainee` | `com.android.application` | **Gym Trainee** app. `TraineeActivity : BaseWorkoutActivity`. Perform the plan: tap a row to log a set, reset progress with the button. |
+| `:trainee` | `com.android.application` | **Gym Trainee** app. `TraineeActivity : BaseWorkoutActivity`. Perform the plan: tap a card to log a set, reset progress with the button. |
 
 ## How the inheritance works
 
-`BaseWorkoutActivity` owns everything common to both screens — loading the
-plan, the RecyclerView, the summary line, the action button and saving. It
-declares five hooks the subclasses must (or may) override:
+`BaseWorkoutActivity` (a `ComponentActivity`) owns everything common to both
+screens — loading the plan, the observable Compose state, the theme, the
+shared `WorkoutScreen` and saving. It declares hooks the subclasses override:
 
 ```
-screenTitle()        -> action-bar title
+screenTitle()        -> top app bar title
 actionLabel()        -> bottom button text
 onActionClicked()    -> what the bottom button does
-onExerciseClicked()  -> what a row tap does
+onExerciseClicked()  -> what a card tap does
 describeExercise()   -> the secondary line under each exercise
 emptyHint()          -> optional empty-state text
+accentColor()        -> app accent colour (blue trainer / green trainee)
+OverlayContent()     -> optional extra UI (trainer's add/edit dialog)
 ```
 
 The **same** base class therefore renders and behaves completely differently
 in the two apps just by overriding those hooks — that is the point of the
 abstract Activity.
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI | Jetpack Compose + Material 3 |
+| Shared screen | `WorkoutScreen` composable in `:shared` |
+| Persistence | SharedPreferences (JSON) via `WorkoutRepository` |
+| Min / Compile SDK | 24 / 34 |
+| Language | Kotlin |
+
+## Screens
+
+### Gym Trainer (blue) — build the plan
+| Plan | Add exercise | After adding |
+|------|--------------|--------------|
+| ![](docs/screens/trainer_01_list.png) | ![](docs/screens/trainer_02_add_dialog.png) | ![](docs/screens/trainer_03_added.png) |
+
+### Gym Trainee (green) — perform the plan
+| Workout | Logging progress |
+|---------|------------------|
+| ![](docs/screens/trainee_01_list.png) | ![](docs/screens/trainee_02_progress.png) |
+
+## Demo videos
+
+Screen recordings of both apps are in [`docs/video/`](docs/video):
+`trainer_demo.mp4` and `trainee_demo.mp4`.
 
 ## Run it
 
